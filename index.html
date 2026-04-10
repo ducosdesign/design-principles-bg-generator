@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design Principles Pattern Generator</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --panel: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar Styling */
+        #controls {
+            width: 320px;
+            background: var(--panel);
+            padding: 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        /* Canvas Area */
+        #viewport {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        canvas {
+            background: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        h1 { font-size: 1.2rem; margin-bottom: 10px; color: #1e293b; }
+        label { font-size: 0.85rem; font-weight: 600; color: #64748b; }
+        
+        select, input[type="range"], input[type="color"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+        }
+
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .btn-generate { background: #0f172a; color: white; margin-top: 10px; }
+        .btn-download { background: white; border: 1px solid #0f172a; color: #0f172a; }
+        button:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+    <div id="controls">
+        <h1>Pattern Studio</h1>
+        
+        <label>Principle of Design</label>
+        <select id="principle">
+            <option value="repetition">Repetition (Grid)</option>
+            <option value="balance">Symmetry (Balance)</option>
+            <option value="contrast">Contrast (Size/Color)</option>
+            <option value="hierarchy">Hierarchy (Focal Point)</option>
+        </select>
+
+        <label>Shape Count</label>
+        <input type="range" id="count" min="10" max="300" value="60">
+
+        <label>Base Size</label>
+        <input type="range" id="size" min="5" max="100" value="40">
+
+        <label>Primary Color</label>
+        <input type="color" id="color1" value="#2563eb">
+
+        <label>Secondary Color</label>
+        <input type="color" id="color2" value="#f43f5e">
+
+        <button class="btn-generate" onclick="draw()">Regenerate Pattern</button>
+        <button class="btn-download" onclick="download()">Download JPG</button>
+    </div>
+
+    <div id="viewport">
+        <canvas id="patternCanvas" width="800" height="800"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('patternCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function draw() {
+            const principle = document.getElementById('principle').value;
+            const count = parseInt(document.getElementById('count').value);
+            const baseSize = parseInt(document.getElementById('size').value);
+            const c1 = document.getElementById('color1').value;
+            const c2 = document.getElementById('color2').value;
+
+            // Clear Canvas
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < count; i++) {
+                ctx.fillStyle = (i % 2 === 0) ? c1 : c2;
+                
+                let x, y, size = baseSize;
+
+                if (principle === 'repetition') {
+                    const cols = Math.sqrt(count);
+                    const spacing = canvas.width / cols;
+                    x = (i % Math.ceil(cols)) * spacing + (spacing/2);
+                    y = Math.floor(i / Math.ceil(cols)) * spacing + (spacing/2);
+                } 
+                else if (principle === 'balance') {
+                    // Symmetrical balance logic
+                    x = Math.random() * (canvas.width / 2);
+                    y = Math.random() * canvas.height;
+                    drawShape(x, y, size); // Left
+                    drawShape(canvas.width - x, y, size); // Mirror Right
+                    continue; 
+                } 
+                else if (principle === 'contrast') {
+                    x = Math.random() * canvas.width;
+                    y = Math.random() * canvas.height;
+                    size = (i % 5 === 0) ? baseSize * 3 : baseSize / 2;
+                    ctx.fillStyle = (i % 5 === 0) ? c1 : "#e2e8f0"; // High contrast vs subtle
+                }
+                else if (principle === 'hierarchy') {
+                    x = Math.random() * canvas.width;
+                    y = Math.random() * canvas.height;
+                    // One giant element (the focal point) others small
+                    if (i === 0) {
+                        x = canvas.width / 2;
+                        y = canvas.height / 2;
+                        size = baseSize * 4;
+                        ctx.fillStyle = c1;
+                    } else {
+                        size = Math.random() * (baseSize / 2);
+                        ctx.fillStyle = "#cbd5e1";
+                    }
+                }
+
+                drawShape(x, y, size);
+            }
+        }
+
+        function drawShape(x, y, size) {
+            ctx.beginPath();
+            // Alternate between circles and squares for variety
+            if (x % 2 === 0) {
+                ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+            } else {
+                ctx.rect(x - size/2, y - size/2, size, size);
+            }
+            ctx.fill();
+        }
+
+        function download() {
+            const link = document.createElement('a');
+            link.download = 'my-pattern.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
+            link.click();
+        }
+
+        // Initial draw
+        draw();
+    </script>
+</body>
+</html>
